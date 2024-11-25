@@ -1,0 +1,6 @@
+ifcopenshell
+pandas
+openpyxl
+tkinter
+
+# pip install -r requirements.txt
