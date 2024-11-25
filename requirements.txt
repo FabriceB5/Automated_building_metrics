@@ -1,6 +1,5 @@
 ifcopenshell
 pandas
-openpyxl
-tkinter
+openpyxlp
 
 # pip install -r requirements.txt
