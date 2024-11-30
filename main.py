@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from ifc_processing import process_bgf_berechnung_detailliert
+from ifc_processing import process_bgf_berechnung
 from ifc_processing import process_kubische_berechnung
 from ifc_processing import debug_ifc_structure
-from excel_export import export_to_excel_detailliert
+from excel_export import export_to_excel
 
 def upload_file():
     global ifc_file_path
@@ -19,8 +19,8 @@ def bgf_berechnung():
             # Debugging der IFC-Struktur
             debug_ifc_structure(ifc_file_path)
 
-            raum_liste, geschoss_auflistung = process_bgf_berechnung_detailliert(ifc_file_path)
-            export_to_excel_detailliert(raum_liste, geschoss_auflistung, "BGF_Berechnung.xlsx")
+            raum_liste, geschoss_auflistung = process_bgf_berechnung(ifc_file_path)
+            export_to_excel(raum_liste, geschoss_auflistung, "BGF_Berechnung.xlsx")
             messagebox.showinfo("Erfolg", "BGF-Berechnung abgeschlossen und Excel exportiert!")
         except Exception as e:
             messagebox.showerror("Fehler", f"Ein Fehler ist aufgetreten: {e}")
@@ -29,7 +29,7 @@ def kubische_berechnung():
     if ifc_file_path:
         try:
             raum_liste, geschoss_auflistung = process_kubische_berechnung(ifc_file_path)
-            export_to_excel_detailliert(raum_liste, geschoss_auflistung, "Kubische_Berechnung.xlsx")
+            export_to_excel(raum_liste, geschoss_auflistung, "Kubische_Berechnung.xlsx")
             messagebox.showinfo("Erfolg", "Kubische Berechnung abgeschlossen und Excel exportiert!")
         except Exception as e:
             messagebox.showerror("Fehler", f"Ein Fehler ist aufgetreten: {e}")
