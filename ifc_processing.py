@@ -23,7 +23,7 @@ def debug_ifc_structure(ifc_file_path):
         else:
             print("  Keine IsDecomposedBy-Beziehungen gefunden.")
 
-def process_bgf_berechnung_detailliert(ifc_file_path):
+def process_bgf_berechnung(ifc_file_path):
     """
     Berechnet die BGF (Bruttogrundfläche) pro Raum und summiert die Flächen pro Geschoss.
 
@@ -103,32 +103,74 @@ def process_kubische_berechnung(ifc_file_path):
         - raum_liste: Liste mit Raumdetails (Geschoss, Raumname, Volumen)
         - geschoss_auflistung: Liste mit summierten Volumen pro Geschoss
     """
+
+    # IFC-Modell öffnen
     model = ifcopenshell.open(ifc_file_path)
 
-    raum_liste = []
-    geschoss_volumen = {}
+    raum_liste = []  # Liste für Raumdetails (Raumname, Volumen)
+    geschoss_volumen = {}  # Dictionary für summierte Volumen pro Geschoss
 
-    print("Beginne die Verarbeitung der IfcBuildingStoreys für Kubische Berechnung...")
+    print("Beginne die Verarbeitung der IfcBuildingStoreys für Kubatur...")
 
+    # Iteriere über alle Geschosse
     for storey in model.by_type("IfcBuildingStorey"):
+        # Name des Geschosses lesen (oder "Unbekannt" setzen, wenn Name fehlt)
         storey_name = storey.Name if hasattr(storey, "Name") else "Unbekannt"
 
-        geschoss_volumen[storey_name] = 0
+        # Initialisiere Volumen für das Geschoss
+        if storey_name not in geschoss_volumen:
+            geschoss_volumen[storey_name] = 0
 
-        spaces = storey.IsDecomposedBy[0].RelatedObjects if storey.IsDecomposedBy else []
+        # Suche alle Räume, die mit dem Geschoss verknüpft sind
+        spaces = []
+        if storey.IsDecomposedBy:  # Prüfe, ob das Geschoss Räume enthält
+            for rel in storey.IsDecomposedBy:
+                if rel.is_a("IfcRelAggregates"):  # Räume sind oft über Aggregates verknüpft
+                    spaces.extend(rel.RelatedObjects)
 
+        print(f"DEBUG: Geschoss {storey_name} hat {len(spaces)} Räume.")
+
+        # Iteriere über die Räume im Geschoss
         for space in spaces:
-            room_name = space.Name if hasattr(space, "Name") else "Unbenannter Raum"
-            volume = getattr(space, "Volume", 0)
+            if space.is_a("IfcSpace"):  # Prüfe, ob es sich um einen Raum handelt
+                room_name = space.Name if hasattr(space, "Name") else "Unbenannter Raum"
+                volume = 0  # Initialisiere das Volumen des Raumes
 
-            print(f"Raum: {room_name}, Geschoss: {storey_name}, Volumen: {volume}")
-            raum_liste.append({
-                "Bezeichnung": f"{storey_name} - {room_name}",
-                "Volumen": volume
-            })
-            geschoss_volumen[storey_name] += float(volume) if isinstance(volume, (int, float)) else 0
+                # Zugriff auf Mengen (Quantities)
+                if hasattr(space, "IsDefinedBy"):  # Prüfen, ob Mengen definiert sind
+                    for property_set in space.IsDefinedBy:  # Alle PropertySets des Raumes durchlaufen
+                        if property_set.is_a("IfcRelDefinesByProperties"):
+                            props = property_set.RelatingPropertyDefinition
+                            if props.is_a("IfcElementQuantity"):  # Suche nach Mengen (ElementQuantity)
+                                print(f"DEBUG: Mengen gefunden für Raum {room_name}:")
+                                for quantity in props.Quantities:
+                                    print(f"  Menge: {quantity.Name}, Wert: {getattr(quantity, 'VolumeValue', None)}")
+                                    if quantity.Name.lower() in ["volumen", "volume", "grossvolume"]:  # Alternative Namen prüfen
+                                        volume_value = getattr(quantity, 'VolumeValue', 0)
+                                        try:
+                                            volume = float(volume_value)  # Konvertiere zu Float
+                                            break
+                                        except ValueError:
+                                            volume = 0  # Setze Volumen auf 0 bei ungültigem Wert
 
-    geschoss_auflistung = [{"Bezeichnung": f"{storey_name}", "Volumen": total_volume}
-                           for storey_name, total_volume in geschoss_volumen.items()]
+                # Debugging-Ausgabe: Volumen des Raumes
+                print(f"DEBUG: Raum {room_name} im Geschoss {storey_name} hat Volumen: {volume}")
 
+                # Füge Raumdetails zur Liste hinzu
+                raum_liste.append({
+                    "Bezeichnung": f"{storey_name} - {room_name}",
+                    "Volumen": volume
+                })
+
+                # Addiere Volumen des Raumes zum Gesamtvolumen des Geschosses
+                geschoss_volumen[storey_name] += volume
+                print(f"DEBUG: Aktuelles Gesamtvolumen für Geschoss {storey_name}: {geschoss_volumen[storey_name]}")
+
+    # Summiere die Geschossdaten und wandle sie in eine Liste um
+    geschoss_auflistung = [
+        {"Bezeichnung": storey_name, "Volumen": total_volume}
+        for storey_name, total_volume in geschoss_volumen.items()
+    ]
+
+    # Gib die Ergebnisse zurück: Raumliste und Geschossauflistung
     return raum_liste, geschoss_auflistung
