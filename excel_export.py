@@ -1,8 +1,8 @@
 import pandas as pd
 
-def export_to_excel_detailliert(raum_liste, geschoss_auflistung, file_name):
+def export_to_excel(raum_liste, geschoss_auflistung, file_name):
     """
-    Exportiert Raumdetails und Geschossübersicht in eine Excel-Datei.
+    Exportiert die Raum- und Geschossdaten in eine Excel-Datei.
 
     :param raum_liste: Liste der Raumdetails (Bezeichnung, Fläche/Volumen).
     :param geschoss_auflistung: Liste der summierten Werte pro Geschoss.
