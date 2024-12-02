@@ -37,10 +37,8 @@ def bgf_berechnung():
             # Verarbeitung der BGF-Berechnung und Excel-Export
             raum_liste, geschoss_auflistung = process_bgf_berechnung(ifc_file_path)
             export_to_excel(raum_liste, geschoss_auflistung, "BGF_Berechnung.xlsx")
-            # Erfolgsmeldung anzeigen
             messagebox.showinfo("Erfolg", "BGF-Berechnung abgeschlossen und Excel exportiert")
         except Exception as e:
-            # Fehler melden, falls etwas schiefläuft
             messagebox.showerror("Fehler", f"Ein Fehler ist aufgetreten: {e}")
 
 # Funktion zur Berechnung von kubischen Parametern
@@ -54,10 +52,8 @@ def kubische_berechnung():
             # Verarbeitung der kubischen Berechnung und Excel-Export
             raum_liste, geschoss_auflistung = process_kubische_berechnung(ifc_file_path)
             export_to_excel(raum_liste, geschoss_auflistung, "Kubische_Berechnung.xlsx")
-            # Erfolgsmeldung anzeigen
             messagebox.showinfo("Erfolg", "Kubische Berechnung abgeschlossen und Excel exportiert")
         except Exception as e:
-            # Fehler melden, falls etwas schiefläuft
             messagebox.showerror("Fehler", f"Ein Fehler ist aufgetreten: {e}")
 
 # Hauptfenster der Anwendung erstellen
