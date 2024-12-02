@@ -6,22 +6,35 @@ FLAECHE_NAMEN = ["Fläche", "Area", "Superficie", "Surface"]
 def debug_ifc_structure(ifc_file_path):
     """
     Analysiert die IfcBuildingStoreys und ihre Beziehungen zu Räumen.
+    Diese Funktion dient zur Strukturprüfung einer IFC-Datei. Sie untersucht, ob und wie die Geschosse
+    (`IfcBuildingStoreys`) mit Räumen (`IfcSpace`) über spezifische Beziehungen verknüpft sind.
+
+    :param ifc_file_path: Pfad zur IFC-Datei, die analysiert werden soll.
     """
+    # Öffne die IFC-Datei
     model = ifcopenshell.open(ifc_file_path)
 
     print("Prüfe IfcBuildingStoreys und deren Beziehungen...")
+    # Iteriere über alle IfcBuildingStoreys (Geschosse) in der IFC-Datei
     for storey in model.by_type("IfcBuildingStorey"):
+        # Lese den Namen des Geschosses (falls vorhanden), sonst "Unbekannt"
         storey_name = storey.Name if hasattr(storey, "Name") else "Unbekannt"
         print(f"\nGeschoss: {storey_name}")
 
+        # Prüfe, ob das Geschoss eine IsDecomposedBy-Beziehung hat (zeigt verknüpfte Objekte)
         if storey.IsDecomposedBy:
             print(f"  IsDecomposedBy vorhanden: {len(storey.IsDecomposedBy)} Einträge")
+            # Iteriere über die IsDecomposedBy-Beziehungen
             for rel in storey.IsDecomposedBy:
+                # Zeige den Beziehungstyp (z. B. IfcRelAggregates oder IfcRelContainedInSpatialStructure)
                 print(f"    Beziehungstyp: {rel.is_a()}")
+                # Falls die Beziehung IfcRelContainedInSpatialStructure ist, zeige die Anzahl der verknüpften Objekte
                 if rel.is_a("IfcRelContainedInSpatialStructure"):
                     print(f"    Anzahl RelatedObjects: {len(rel.RelatedObjects)}")
         else:
+            # Keine IsDecomposedBy-Beziehungen gefunden
             print("  Keine IsDecomposedBy-Beziehungen gefunden.")
+
 
 def process_bgf_berechnung(ifc_file_path):
     """
@@ -32,6 +45,7 @@ def process_bgf_berechnung(ifc_file_path):
         - raum_liste: Liste mit Raumdetails (Geschoss, Raumname, Fläche)
         - geschoss_auflistung: Liste mit summierten Flächen pro Geschoss
     """
+
     model = ifcopenshell.open(ifc_file_path)
 
     raum_liste = []
@@ -39,59 +53,66 @@ def process_bgf_berechnung(ifc_file_path):
 
     print("Beginne die Verarbeitung der IfcBuildingStoreys...")
 
+    # Iteriere über alle Geschosse in der IFC-Datei
     for storey in model.by_type("IfcBuildingStorey"):
         storey_name = storey.Name if hasattr(storey, "Name") else "Unbekannt"
 
-        # Initialisiere die Fläche für jedes Geschoss
+        # Initialisiere die Fläche des Geschosses, falls noch nicht vorhanden
         if storey_name not in geschoss_flaechen:
             geschoss_flaechen[storey_name] = 0
 
-        # Räume über IfcRelAggregates finden
-        spaces = []
-        if storey.IsDecomposedBy:
+        # Suche nach Räumen, die mit dem Geschoss verknüpft sind
+        spaces = []  # Liste der Räume im Geschoss
+        if storey.IsDecomposedBy:  # Prüfen, ob das Geschoss Räume enthält
             for rel in storey.IsDecomposedBy:
-                if rel.is_a("IfcRelAggregates"):
+                if rel.is_a("IfcRelAggregates"):  # Räume sind über IfcRelAggregates verknüpft
                     spaces.extend(rel.RelatedObjects)
 
         print(f"DEBUG: Geschoss {storey_name} hat {len(spaces)} Räume.")
 
+        # Iteriere über die Räume (IfcSpace) im Geschoss
         for space in spaces:
-            if space.is_a("IfcSpace"):
+            if space.is_a("IfcSpace"):  # Prüfen, ob es sich um einen Raum handelt
+                # Lese den Namen des Raumes (falls vorhanden), sonst "Unbenannter Raum"
                 room_name = space.Name if hasattr(space, "Name") else "Unbenannter Raum"
                 area = 0
 
-                # Fläche aus Property-Set extrahieren
-                for property_set in space.IsDefinedBy:
+                # Extrahiere die Fläche aus den Property-Sets des Raumes
+                for property_set in space.IsDefinedBy:  # Durchlaufe alle verknüpften PropertySets
                     if property_set.is_a("IfcRelDefinesByProperties"):
                         props = property_set.RelatingPropertyDefinition
-                        if props.is_a("IfcPropertySet"):
-                            for prop in props.HasProperties:
+                        if props.is_a("IfcPropertySet"):  # Prüfe, ob es ein PropertySet ist
+                            for prop in props.HasProperties:  # Iteriere über die Eigenschaften
+                                # Prüfen, ob der Name der Eigenschaft in den definierten Flächenbezeichnungen ist
                                 if prop.Name in FLAECHE_NAMEN:
                                     area_value = getattr(prop.NominalValue, 'wrappedValue', 0)
-                                    if isinstance(area_value, str):
+                                    if isinstance(area_value, str):  # Entferne "m²", falls vorhanden
                                         area_value = area_value.replace("m²", "").strip()
                                     try:
-                                        area = float(area_value)
+                                        area = float(area_value)  # Konvertiere die Fläche zu Float
                                     except ValueError:
-                                        area = 0
-                                    break
+                                        area = 0  # Setze die Fläche auf 0, falls ungültig
+                                    break  # Verlasse die Schleife nach Finden der Fläche
 
                 print(f"DEBUG: Raum {room_name} im Geschoss {storey_name} hat Fläche: {area}")
 
-                # Raumdetails zur Liste hinzufügen
+                # Füge die Raumdetails zur Liste hinzu
                 raum_liste.append({
                     "Bezeichnung": f"{storey_name} - {room_name}",
                     "Fläche": area
                 })
 
-                # Fläche zum Geschoss addieren
+                # Addiere die Fläche des Raumes zur Gesamtfläche des Geschosses
                 geschoss_flaechen[storey_name] += area
                 print(f"DEBUG: Aktuelle Gesamtfläche für Geschoss {storey_name}: {geschoss_flaechen[storey_name]}")
 
-    # Summierte Flächen pro Geschoss in eine Liste umwandeln
-    geschoss_auflistung = [{"Bezeichnung": storey_name, "Fläche": total_area}
-                           for storey_name, total_area in geschoss_flaechen.items()]
+    # Konvertiere die summierten Geschossflächen in eine Liste
+    geschoss_auflistung = [
+        {"Bezeichnung": storey_name, "Fläche": total_area}
+        for storey_name, total_area in geschoss_flaechen.items()
+    ]
 
+    # Gib die Raumliste und die summierten Geschossflächen zurück
     return raum_liste, geschoss_auflistung
 
 def process_kubische_berechnung(ifc_file_path):
