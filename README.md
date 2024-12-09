@@ -1,2 +1,2 @@
 # Automated_building_metrics
-IFC-Calculator for building metrics
+This is an IFC-Calculator for various building metrics needed in Construction submissions in Switzerland.

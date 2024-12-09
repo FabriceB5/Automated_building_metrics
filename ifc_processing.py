@@ -81,7 +81,7 @@ def process_bgf_berechnung(ifc_file_path):
                 for property_set in space.IsDefinedBy:  # Durchlaufe alle verknüpften PropertySets
                     if property_set.is_a("IfcRelDefinesByProperties"):
                         props = property_set.RelatingPropertyDefinition
-                        if props.is_a("IfcPropertySet"):  # Prüfe, ob es ein PropertySet ist
+                        if props.is_a("IfcPropertySet"):  # Prüfe, ob es ein PropertySet ist, enthält Eigenschaften des Raumes
                             for prop in props.HasProperties:  # Iteriere über die Eigenschaften
                                 # Prüfen, ob der Name der Eigenschaft in den definierten Flächenbezeichnungen ist
                                 if prop.Name in FLAECHE_NAMEN:
