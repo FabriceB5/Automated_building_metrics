@@ -8,6 +8,9 @@ from ifc_processing import process_kubische_berechnung
 from ifc_processing import debug_ifc_structure
 from excel_export import export_to_excel
 
+# Globale Variable für den IFC-Dateipfad
+ifc_file_path = None
+
 # Funktion zum Hochladen einer IFC-Datei
 def upload_file():
     """
@@ -59,52 +62,90 @@ def kubische_berechnung():
 # Hauptfenster der Anwendung erstellen
 root = tk.Tk()
 root.title("Automated Building Metrics")
-root.geometry("600x400")
+root.geometry("800x800")
 root.configure(bg="#2c2c2c")
 
 # Überschrift der Anwendung
+taskbar = tk.Frame(root, bg="black", height=50)
+taskbar.pack(side=tk.TOP, fill=tk.X)
 title_label = tk.Label(
-    root,
+    taskbar,
     text="Automated Building Metrics",
     font=("Helvetica", 24, "bold"),
-    bg="#2c2c2c",
-    fg="#ffa500"
+    bg="black",
+    fg="#ffffff"
 )
-title_label.pack(pady=20)
+title_label.pack(pady=10)
 
-# Schaltfläche zum Hochladen der IFC-Datei
+# Hauptbereich
+main_frame = tk.Frame(root, bg="#2c2c2c")
+main_frame.pack(fill=tk.BOTH, expand=True)
+
+# Linker Bereich für Buttons
+left_frame = tk.Frame(main_frame, bg="#2c2c2c", width=200)
+left_frame.pack(side=tk.LEFT, fill=tk.Y)
+
+# Trennlinie
+separator = tk.Frame(main_frame, bg="#666666", width=2)
+separator.pack(side=tk.LEFT, fill=tk.Y)
+
+# Rechter Bereich für Informationen
+right_frame = tk.Frame(main_frame, bg="#333333")
+right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+info_label = tk.Label(
+    right_frame,
+    text="Bitte laden Sie eine IFC-Datei hoch, um mit der Berechnung zu beginnen.",
+    bg="#333333",
+    fg="#ffffff",
+    font=("Helvetica", 14),
+    wraplength=400,
+    justify="center"
+)
+info_label.pack(expand=True)
+
+# Buttons im linken Bereich
 btn_upload = tk.Button(
-    root,
+    left_frame,
     text="IFC-Datei hochladen",
     command=upload_file,
-    bg="#ffa500",
-    fg="black",
-    font=("Helvetica", 14, "bold")
+    bg="#2c2c2c",  # Gleiche Hintergrundfarbe wie das Fenster
+    fg="white",  # Schriftfarbe weiß
+    font=("Helvetica", 14, "bold"),
+    highlightbackground="white",  # Rahmenfarbe
+    highlightthickness=2,  # Rahmendicke
+    bd=0  # Deaktiviert den Standardrahmen
 )
-btn_upload.pack(pady=10)
+btn_upload.pack(pady=20, padx=10, fill=tk.X)
 
-# Schaltfläche für die BGF-Berechnung
 btn_bgf_berechnung = tk.Button(
-    root,
+    left_frame,
     text="BGF-Berechnung",
     state=tk.DISABLED,
     command=bgf_berechnung,
-    bg="#ffa500",
-    fg="black",
-    font=("Helvetica", 14, "bold")
+    bg="#2c2c2c",  # Gleiche Hintergrundfarbe wie das Fenster
+    fg="white",  # Schriftfarbe weiß
+    font=("Helvetica", 14, "bold"),
+    highlightbackground="white",  # Rahmenfarbe
+    highlightthickness=2,  # Rahmendicke
+    bd=0  # Deaktiviert den Standardrahmen
 )
-btn_bgf_berechnung.pack(pady=10)
+btn_bgf_berechnung.pack(pady=10, padx=10, fill=tk.X)
 
-# Schaltfläche für die kubische Berechnung
 btn_kubische_berechnung = tk.Button(
-    root,
+    left_frame,
     text="Kubische Berechnung",
     state=tk.DISABLED,
     command=kubische_berechnung,
-    bg="#ffa500",
-    fg="black",
-    font=("Helvetica", 14, "bold")
+    bg="#2c2c2c",  # Gleiche Hintergrundfarbe wie das Fenster
+    fg="white",  # Schriftfarbe weiß
+    font=("Helvetica", 14, "bold"),
+    highlightbackground="white",  # Rahmenfarbe
+    highlightthickness=2,  # Rahmendicke
+    bd=0  # Deaktiviert den Standardrahmen
 )
-btn_kubische_berechnung.pack(pady=10)
+btn_kubische_berechnung.pack(pady=10, padx=10, fill=tk.X)
+
+
 
 root.mainloop()
