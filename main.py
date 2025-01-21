@@ -1,8 +1,8 @@
-# Importiere das Tkinter-Modul für die GUI-Erstellung und zusätzliche Komponenten
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from ifc_processing import process_bgf_berechnung, process_kubische_berechnung
 from excel_export import export_to_excel
+from tkinter import ttk
 
 # Globale Variable für den IFC-Dateipfad
 ifc_file_path = None
@@ -22,7 +22,7 @@ def upload_file():
 
 def bgf_berechnung():
     """
-    Führt die BGF-Berechnung durch und vergleicht sie mit der berechneten maximal zulässigen BGF.
+    Führt die BGF-Berechnung durch und zeigt die Ergebnisse an.
     """
     if not ifc_file_path:
         messagebox.showerror("Fehler", "Bitte laden Sie zuerst eine IFC-Datei hoch.")
@@ -33,9 +33,12 @@ def bgf_berechnung():
         raum_liste, geschoss_auflistung = process_bgf_berechnung(ifc_file_path)
         export_to_excel(raum_liste, geschoss_auflistung, "BGF_Berechnung.xlsx")
 
+        # Ergebnisse in der Tabelle anzeigen
+        update_results_table(raum_liste)
+
         # Gesamtfläche der BGF berechnen
         total_bgf = sum(item["Fläche"] for item in geschoss_auflistung)
-        
+
         # Grundstücksfläche und Ausnützungsziffer abrufen
         try:
             grundstuecksflaeche = float(entry_gf.get())
@@ -43,10 +46,10 @@ def bgf_berechnung():
         except ValueError:
             messagebox.showerror("Fehler", "Bitte geben Sie gültige Zahlenwerte für GF und AZ ein.")
             return
-        
+
         # Maximale zulässige BGF berechnen
         max_bgf = grundstuecksflaeche * ausnuetzungsziffer
-        
+
         # Ergebnis anzeigen
         messagebox.showinfo(
             "BGF-Auswertung",
@@ -60,7 +63,7 @@ def bgf_berechnung():
 
 def kubische_berechnung():
     """
-    Führt die Kubische Berechnung durch und exportiert die Ergebnisse in eine Excel-Datei.
+    Führt die Kubische Berechnung durch und zeigt die Ergebnisse an.
     """
     if not ifc_file_path:
         messagebox.showerror("Fehler", "Bitte laden Sie zuerst eine IFC-Datei hoch.")
@@ -70,9 +73,34 @@ def kubische_berechnung():
         # Kubische Berechnung durchführen
         raum_liste, geschoss_auflistung = process_kubische_berechnung(ifc_file_path)
         export_to_excel(raum_liste, geschoss_auflistung, "Kubische_Berechnung.xlsx")
+
+        # Ergebnisse in der Tabelle anzeigen
+        update_results_table(raum_liste)
+
         messagebox.showinfo("Erfolg", "Kubische Berechnung abgeschlossen und Excel exportiert.")
     except Exception as e:
         messagebox.showerror("Fehler", f"Ein Fehler ist aufgetreten: {str(e)}")
+
+def update_results_table(data):
+    """
+    Aktualisiert die Ergebnis-Tabelle und passt die Spaltenüberschrift basierend auf den Daten an.
+    :param data: Liste von Dictionaries mit "Bezeichnung" und entweder "Fläche" oder "Volumen".
+    """
+    # Tabelle leeren
+    for row in results_table.get_children():
+        results_table.delete(row)
+
+    # Prüfen, ob die Daten "Fläche" oder "Volumen" enthalten
+    if data and "Fläche" in data[0]:
+        results_table.heading("Wert", text="Fläche (m²)")
+    elif data and "Volumen" in data[0]:
+        results_table.heading("Wert", text="Volumen (m³)")
+    else:
+        results_table.heading("Wert", text="Wert")
+
+    # Daten einfügen
+    for row in data:
+        results_table.insert("", tk.END, values=(row["Bezeichnung"], row.get("Fläche", row.get("Volumen", "N/A"))))
 
 # Hauptfenster der Anwendung erstellen
 root = tk.Tk()
@@ -104,7 +132,7 @@ left_frame.pack(side=tk.LEFT, fill=tk.Y)
 separator = tk.Frame(main_frame, bg="#666666", width=2)
 separator.pack(side=tk.LEFT, fill=tk.Y)
 
-# Rechter Bereich für Informationen
+# Rechter Bereich für Informationen und Ergebnisse
 right_frame = tk.Frame(main_frame, bg="#333333")
 right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -118,6 +146,12 @@ info_label = tk.Label(
     justify="center"
 )
 info_label.pack(pady=20)
+
+# Ergebnis-Tabelle
+results_table = ttk.Treeview(right_frame, columns=("Bezeichnung", "Wert"), show="headings")
+results_table.heading("Bezeichnung", text="Bezeichnung")
+results_table.heading("Wert", text="Wert")  # Initialwert
+results_table.pack(fill=tk.BOTH, expand=True)
 
 # Eingabefelder
 label_gf = tk.Label(
